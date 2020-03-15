@@ -1,66 +1,122 @@
 package com.postcarutin.ui
 
-import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.View
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.gson.GsonBuilder
 import com.postcarutin.R
-import com.postcarutin.data.*
+import com.postcarutin.client.Api
+import com.postcarutin.data.Post
+import com.postcarutin.data.PostType
 import com.postcarutin.data.adapters.PostRecyclerAdapter
+import io.ktor.client.request.get
 import kotlinx.android.synthetic.main.activity_main.*
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
+import kotlinx.coroutines.*
+import java.util.*
+import kotlin.coroutines.CoroutineContext
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), CoroutineScope {
+
+    private val job = SupervisorJob()
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + job
+    private var PERMISSIONS_REQUEST_INTERNET = 11
+    private var adsPost: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        fetchData()
+    }
 
-        val list: MutableList<Post> = mutableListOf(
-            Post(
-                id = 1, author = "Красивые люди", postType = PostType.POST, text = "Мы скромные!",
-                date = "25.02.20", like = Like(0, false), comment = Comment(33, false),
-                reply = Repost(33)
-            ),
-            Post(
-                id = 2, author = "Красивые люди", postType = PostType.REPOST, text = "Мы скромные!",
-                date = "25.02.20", like = Like(0, false), comment = Comment(33, false),
-                reply = Repost(1_000, "Мы лучшие! Мы крутые!", "Красивые люди", "24.02.20")
-            ),
-            Post(
-                id = 3, author = "Красивые люди", postType = PostType.ADS, text = "Мы скромные!",
-                date = "25.02.20", like = Like(0, false), comment = Comment(33, false),
-                adsUrl = "https://yandex.ru/images/search?text=самолёт&from=tabbar",
-                reply = Repost(333)
-            ),
-            Post(
-                id = 4, author = "Красивые люди", postType = PostType.VIDEO, text = "Мы скромные!",
-                date = "25.02.20", like = Like(0, false), comment = Comment(33, false),
-                video = Video("https://www.youtube.com/watch?v=WhWc3b3KhnY"),
-                reply = Repost(323)
-            ),
-            Post(
-                id = 5, author = "Красивые люди", postType = PostType.EVENT, text = "Мы скромные!",
-                date = "25.02.20", like = Like(0, false), comment = Comment(33, false),
-                address = "Москва, центр культуры",
-                reply = Repost(33)
-            )
-        )
-
-        with(recyclerListPosts) {
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = PostRecyclerAdapter(list)
+    private fun setList(list: MutableList<Post>) = launch {
+        withContext(Dispatchers.Main) {
+            with(recyclerListPosts) {
+                layoutManager = LinearLayoutManager(this@MainActivity)
+                adapter = PostRecyclerAdapter(list)
+            }
+            Api.client.close()
         }
+    }
 
-        val gson = GsonBuilder().apply {
-            setPrettyPrinting()
-            serializeNulls()
-        }.create()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Files.write(Paths.get("./output.json"), gson.toJson(list).toByteArray(), StandardOpenOption.CREATE)
+    private fun fetchData() = launch {
+
+        try {
+            if (ContextCompat.checkSelfPermission(
+                    this@MainActivity,
+                    Manifest.permission.INTERNET
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this@MainActivity,
+                    arrayOf(Manifest.permission.INTERNET),
+                    this@MainActivity.PERMISSIONS_REQUEST_INTERNET
+                )
+            } else {
+                val list = withContext(Dispatchers.IO) {
+                    Api.client.get<List<Post>>(Api.url).toMutableList()
+                }
+                val listAds = withContext(Dispatchers.IO) {
+                    Api.client.get<List<Post>>(Api.urlAds).toMutableList()
+                }
+                list.addAll(listAds)
+                Toast.makeText(this@MainActivity, "Length: ${list.size}", Toast.LENGTH_LONG).show()
+                indeterminateBar.visibility = View.GONE
+
+                for (i in 0 until list.size) {
+                    if (list[i].postType == PostType.ADS) {
+                        adsPost = i
+                    }
+                }
+
+                if (adsPost != 0) {
+                    for (i in 0 until list.size) {
+                        if ((i + 1) % 3 == 0) {
+                            Collections.swap(list, i, adsPost)
+                        }
+                    }
+                }
+                setList(list = list)
+            }
+        } catch (e: Exception) {
+            Toast.makeText(
+                this@MainActivity, getString(R.string.request_permission_false),
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        cancel()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<String?>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == this@MainActivity.PERMISSIONS_REQUEST_INTERNET) {
+            if (ContextCompat.checkSelfPermission(
+                    this@MainActivity,
+                    Manifest.permission.INTERNET
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.request_permission_true), Toast.LENGTH_LONG
+                ).show()
+            } else {
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.request_permission_false), Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 }

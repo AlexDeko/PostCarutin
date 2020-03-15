@@ -6,4 +6,6 @@
     <string name="geoCoordinatesGM">geo:%s</string>
     <string name="geoAddressGM">geo:?q=%s</string>
     <string name="ads">Реклама</string>
+    <string name="request_permission_true">Разрешение получено</string>
+    <string name="request_permission_false">Разрешение не получено</string>
 </resources>

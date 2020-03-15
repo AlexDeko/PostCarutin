@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -10,11 +10,21 @@
         android:id="@+id/recyclerListPosts"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize"
+
         android:cacheColorHint="@color/colorNull"
         android:dividerHeight="12dp"
         android:nestedScrollingEnabled="true"
         android:scrollbars="vertical"
         tools:listitem="@layout/list_post_item" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <androidx.core.widget.ContentLoadingProgressBar
+        android:id="@+id/indeterminateBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@android:style/Widget.ProgressBar.Large"
+        android:indeterminate="true"
+        android:layout_gravity="center"
+        android:visibility="visible"/>
+
+
+</FrameLayout>

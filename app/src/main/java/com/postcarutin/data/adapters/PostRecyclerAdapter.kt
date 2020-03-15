@@ -25,7 +25,8 @@ fun viewTypeToPostType(viewType: Int) = when (viewType) {
     else -> TODO("unknown view type")
 }
 
-class PostRecyclerAdapter(val list: MutableList<Post>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class PostRecyclerAdapter(val list: MutableList<Post>) :
+    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
         when (viewTypeToPostType(viewType)) {

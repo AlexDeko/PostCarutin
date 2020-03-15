@@ -1,7 +1,18 @@
 package com.postcarutin.data
 
+import com.google.gson.annotations.SerializedName
+
 enum class PostType {
-    POST, REPOST, ADS, VIDEO, EVENT
+    @SerializedName("PostType.POST")
+    POST,
+    @SerializedName("PostType.REPOST")
+    REPOST,
+    @SerializedName("PostType.ADS")
+    ADS,
+    @SerializedName("PostType.VIDEO")
+    VIDEO,
+    @SerializedName("PostType.EVENT")
+    EVENT
 }
 
 data class Post(

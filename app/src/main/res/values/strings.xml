@@ -8,4 +8,5 @@
     <string name="ads">Реклама</string>
     <string name="request_permission_true">Разрешение получено</string>
     <string name="request_permission_false">Разрешение не получено</string>
+    <string name="request_internet_false">Данные с сети не получены</string>
 </resources>
